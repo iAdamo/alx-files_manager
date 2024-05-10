@@ -22,6 +22,20 @@ class DBClient {
     return !!this.db;
   }
 
+  // Fetch a user from the collection users
+  async getUserBy(attributes) {
+    const usersCollection = this.db.collection('users');
+    const user = await usersCollection.findOne(attributes);
+    return user;
+  }
+
+  // Fetch all users
+  async getUsers() {
+    const usersCollection = this.db.collection('users');
+    const users = await usersCollection.find().toArray();
+    return users;
+  }
+
   // returns the number of documents in the collection users
   async nbUsers() {
     try {
