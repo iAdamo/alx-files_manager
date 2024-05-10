@@ -1,7 +1,7 @@
 import express from 'express';
 
-import AppController from '../controller/AppController';
-import UsersController from '../controller/UsersController';
+import AppController from '../controllers/AppController';
+import UsersController from '../controllers/UsersController';
 
 const router = express.Router();
 router.use(express.json());
