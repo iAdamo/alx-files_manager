@@ -1,9 +1,29 @@
+import { createHash } from 'crypto';
+
 import { ObjectId } from 'mongodb';
 
 import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
 
 export default class UsersController {
+  static async postNew(req, res) {
+    try {
+      const { email, password } = req.body;
+      if (!email) return res.status(400).send({ error: 'Missing email' });
+      if (!password) return res.status(400).send({ error: 'Missing password' });
+
+      const user = await dbClient.db.collection('users').findOne({ email });
+      if (user) return res.status(400).send({ error: 'Already exist' });
+
+      const hashedPassword = createHash('sha1').update(password).digest('hex');
+      const result = await dbClient.db.collection('users').insertOne({ email, password: hashedPassword });
+      return res.status(201).send({ id: result.insertedId, email });
+    } catch (error) {
+      console.error('Error creating user:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
   // Retrieve the user based on the token
   static async getMe(req, res) {
     // Obtain the token from the header
