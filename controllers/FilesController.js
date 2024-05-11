@@ -129,4 +129,68 @@ export default class FilesController {
     const cleanedFiles = files.map(({ _id, localPath, ...file }) => ({ id: _id, ...file }));
     res.status(200).send(cleanedFiles);
   }
+
+  // PUT /files/:id/publish - Make a file public callback
+  static async putPublish(req, res) {
+    const userId = await auth(req);
+    if (!userId) {
+      res.status(401).send({ error: 'Unauthorized' });
+      return;
+    }
+
+    // Get the file from the database
+    const fileId = req.params.id;
+    const file = await dbClient.getFileBy({ _id: ObjectId(fileId) });
+    if (!file) {
+      res.status(404).send({ error: 'Not found' });
+      return;
+    }
+
+    // Update the file to be public
+    await dbClient.db.collection('files').updateOne({ _id: ObjectId(fileId) }, { $set: { isPublic: true } });
+    // Reformat the json response
+    const {
+      _id, name, type, parentId,
+    } = file;
+    res.status(200).send({
+      id: _id,
+      userId,
+      name,
+      type,
+      isPublic: true,
+      parentId,
+    });
+  }
+
+  // PUT /files/:id/unpublish - Make a file private callback
+  static async putUnpublish(req, res) {
+    const userId = await auth(req);
+    if (!userId) {
+      res.status(401).send({ error: 'Unauthorized' });
+      return;
+    }
+
+    // Get the file from the database
+    const fileId = req.params.id;
+    const file = await dbClient.getFileBy({ _id: ObjectId(fileId) });
+    if (!file) {
+      res.status(404).send({ error: 'Not found' });
+      return;
+    }
+
+    // Update the file to be private
+    await dbClient.db.collection('files').updateOne({ _id: ObjectId(fileId) }, { $set: { isPublic: false } });
+    // Reformat the json response
+    const {
+      _id, name, type, parentId,
+    } = file;
+    res.status(200).send({
+      id: _id,
+      userId,
+      name,
+      type,
+      isPublic: false,
+      parentId,
+    });
+  }
 }
