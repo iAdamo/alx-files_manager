@@ -93,7 +93,9 @@ export default class FilesController {
       res.status(404).send({ error: 'Not found' });
       return;
     }
-    res.status(200).send(file);
+    // Rename _id and remove localPath for better json response
+    const cleanedFiles = file.map(({ _id, localPath, ...file }) => ({ id: _id, ...file }));
+    res.status(200).send(cleanedFiles);
   }
 
   static async getIndex(req, res) {
@@ -103,12 +105,24 @@ export default class FilesController {
       res.status(401).send({ error: 'Unauthorized' });
       return;
     }
+    console.log('userId', userId);
     // Get query parameters
     const parentId = req.query.parentId ? ObjectId(req.query.parentId) : 0;
     const page = req.query.page || 0;
 
     // Get files from database based on pagination
-    const files = await dbClient.getFiles({ parentId }).skip(page * 20).limit(20).toArray();
-    res.status(200).send(files);
+    const files = await dbClient.db.collection('files').aggregate([
+      { $match: { parentId } },
+      { $skip: page * 20 },
+      { $limit: 20 },
+    ]).toArray();
+
+    if (!files) {
+      res.status(200).send([]);
+      return;
+    }
+    // Rename _id and remove localPath for better json response
+    const cleanedFiles = files.map(({ _id, localPath, ...file }) => ({ id: _id, ...file }));
+    res.status(200).send(cleanedFiles);
   }
 }
