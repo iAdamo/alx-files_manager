@@ -7,6 +7,7 @@ import auth from '../utils/auth';
 import dbClient from '../utils/db';
 
 export default class FilesController {
+  // POST /files - Upload a file callback
   static async postUpload(req, res) {
     // Validate user login
     const userId = await auth(req);
@@ -79,6 +80,7 @@ export default class FilesController {
     }
   }
 
+  // GET /files/:id - Get a file by id callback
   static async getShow(req, res) {
     // Retrieve the user based on the token and validate
     const userId = await auth(req);
@@ -94,10 +96,11 @@ export default class FilesController {
       return;
     }
     // Rename _id and remove localPath for better json response
-    const cleanedFiles = file.map(({ _id, localPath, ...file }) => ({ id: _id, ...file }));
-    res.status(200).send(cleanedFiles);
+    const { _id, localPath, ...rest } = file;
+    res.status(200).send({ id: _id, ...rest });
   }
 
+  // GET /files - Get files callback
   static async getIndex(req, res) {
     // Retrieve the user based on the token and validate
     const userId = await auth(req);
@@ -105,7 +108,7 @@ export default class FilesController {
       res.status(401).send({ error: 'Unauthorized' });
       return;
     }
-    console.log('userId', userId);
+
     // Get query parameters
     const parentId = req.query.parentId ? ObjectId(req.query.parentId) : 0;
     const page = req.query.page || 0;
@@ -122,6 +125,7 @@ export default class FilesController {
       return;
     }
     // Rename _id and remove localPath for better json response
+    console.log(files);
     const cleanedFiles = files.map(({ _id, localPath, ...file }) => ({ id: _id, ...file }));
     res.status(200).send(cleanedFiles);
   }
