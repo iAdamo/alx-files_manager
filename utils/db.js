@@ -32,8 +32,36 @@ class DBClient {
   // Fetch all users
   async getUsers() {
     const usersCollection = this.db.collection('users');
-    const users = await usersCollection.find().toArray();
+    const users = await usersCollection.find();
     return users;
+  }
+
+  // Get a file from the files collection
+  async getFileBy(attributes) {
+    const filesCollection = this.db.collection('files');
+    const file = await filesCollection.findOne(attributes);
+    return file;
+  }
+
+  // Get all files from the files collection
+  async getFiles() {
+    const filesCollection = this.db.collection('files');
+    const files = await filesCollection.find();
+    return files;
+  }
+
+  // Store a user in the collection users
+  async createUser(user) {
+    const usersCollection = this.db.collection('users');
+    const result = await usersCollection.insertOne(user);
+    return result;
+  }
+
+  // Store a file in the collection files
+  async createFile(file) {
+    const filesCollection = this.db.collection('files');
+    const result = await filesCollection.insertOne(file);
+    return result;
   }
 
   // returns the number of documents in the collection users

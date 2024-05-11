@@ -1,6 +1,7 @@
 import { createHash } from 'crypto';
 import { v4 } from 'uuid';
 
+import auth from '../utils/auth';
 import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
 
@@ -47,14 +48,8 @@ export default class AuthController {
   static async getDisconnect(req, res) {
     // Obtain the Authorization token from the header
     const token = req.headers['x-token'];
-    if (!token) {
-      res.status(401).send({ error: 'Unauthorized' });
-      return;
-    }
-
-    // Check if the token is valid
-    const value = await redisClient.get(`auth_${token}`);
-    if (!value) {
+    const userId = await auth(req);
+    if (!userId) {
       res.status(401).send({ error: 'Unauthorized' });
       return;
     }
