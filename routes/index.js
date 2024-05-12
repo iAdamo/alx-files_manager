@@ -14,6 +14,8 @@ router.get('/stats', AppController.getStats);
 
 // File routes
 router.post('/files', FilesController.postUpload);
+router.get('/files/:id', FilesController.getShow);
+router.get('/files', FilesController.getIndex);
 
 // User routes
 router.post('/users', UsersController.postNew);
