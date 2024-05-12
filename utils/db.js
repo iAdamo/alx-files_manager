@@ -57,6 +57,20 @@ class DBClient {
       throw new Error(`Error counting files: ${error.message}`);
     }
   }
+
+  // Create a new file in the collection files
+  async createFile(attributes) {
+    const filesCollection = this.db.collection('files');
+    const file = await filesCollection.insertOne(attributes);
+    return file;
+  }
+
+  // Fetch a file from the collection files
+  async getFileBy(attributes) {
+    const filesCollection = this.db.collection('files');
+    const file = await filesCollection.findOne(attributes);
+    return file;
+  }
 }
 
 const dbClient = new DBClient();

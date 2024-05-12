@@ -1,9 +1,7 @@
 import { createHash } from 'crypto';
 
-import { ObjectId } from 'mongodb';
-
 import dbClient from '../utils/db';
-import redisClient from '../utils/redis';
+import getUserByToken from '../utils/getUser';
 
 export default class UsersController {
   static async postNew(req, res) {
@@ -26,22 +24,15 @@ export default class UsersController {
 
   // Retrieve the user based on the token
   static async getMe(req, res) {
-    // Obtain the token from the header
-    const token = req.headers['x-token'];
-    if (!token) {
-      res.status(401).send({ error: 'Unauthorized' });
-      return;
-    }
-
-    // Check if the token is valid
-    const value = await redisClient.get(`auth_${token}`);
-    if (!value) {
+    // Authenticate user by token
+    const userId = await getUserByToken(req);
+    if (!userId) {
       res.status(401).send({ error: 'Unauthorized' });
       return;
     }
 
     // Fetch the user from the database
-    const user = await dbClient.getUserBy({ _id: ObjectId(value) });
+    const user = await dbClient.getUserBy({ _id: userId });
     if (!user) {
       res.status(401).send({ error: 'Unauthorized' });
       return;
