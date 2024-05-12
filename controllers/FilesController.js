@@ -1,10 +1,12 @@
-import { ObjectId } from 'mongodb';
 import path from 'path';
 import { promises as fs } from 'fs';
 import { v4 } from 'uuid';
 
-import getUserByToken from '../utils/getUser';
+import mime from 'mime-types';
+import { ObjectId } from 'mongodb';
+
 import dbClient from '../utils/db';
+import getUserByToken from '../utils/getUser';
 
 export default class FilesController {
   // POST /files - Upload a file callback
@@ -200,5 +202,55 @@ export default class FilesController {
       isPublic: false,
       parentId,
     });
+  }
+
+  // GET /files/:id/data - Data content callback
+  static async getFile(req, res) {
+    // Get the file from the database
+    const fileId = req.params.id;
+    const file = await dbClient.getFileBy({ _id: ObjectId(fileId) });
+    if (!file) {
+      res.status(404).send({ error: 'Not found' });
+      return;
+    }
+
+    // Obtain the user ID by the token
+    const authUserId = await getUserByToken(req);
+
+    // Get userId and isPublic attributes
+    const { userId, isPublic } = file;
+
+    // Consider when the file is not public and the user is not the owner
+    if (!isPublic && (!authUserId || authUserId.toString() !== userId.toString())) {
+      res.status(403).send({ error: 'Not found' });
+      return;
+    }
+
+    // Check if the file is not a folder
+    if (file.type === 'folder') {
+      res.status(400).send({ error: "A folder doesn't have content" });
+      return;
+    }
+
+    // Check local availability of the file
+    const { localPath } = file;
+    try {
+      await fs.stat(localPath);
+    } catch (err) {
+      res.status(404).send({ error: 'Not found' });
+    }
+
+    // Get the MIME-type of the file
+    const mimeType = mime.lookup(file.name);
+
+    // Read the file
+    const fileContent = await fs.readFile(localPath, 'utf-8');
+    if (fileContent) {
+      // Set the 'Content-Type' header to the MIME type of the file
+      res.set('Content-Type', mimeType);
+
+      // Send the file content
+      res.status(200).send(fileContent);
+    }
   }
 }

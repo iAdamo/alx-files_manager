@@ -40,7 +40,7 @@ export default class AuthController {
     await redisClient.set(key, value, 86400);
 
     // Set the token in the response header and return it in a JSON response
-    res.setHeader('X-Token', token);
+    res.set('X-Token', token);
     res.status(200).send({ token });
   }
 
