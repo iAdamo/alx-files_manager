@@ -147,7 +147,7 @@ export default class FilesController {
 
     // Get the file from the database
     const fileId = req.params.id;
-    const file = await dbClient.getFileBy({ _id: ObjectId(fileId) });
+    const file = await dbClient.getFileBy({ _id: ObjectId(fileId), userId });
     if (!file) {
       res.status(404).send({ error: 'Not found' });
       return;
