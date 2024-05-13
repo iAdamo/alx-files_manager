@@ -2,6 +2,11 @@ import { ObjectId } from 'mongodb';
 import dbClient from './db';
 import redisClient from './redis';
 
+/**
+ * Retrieves the user ID based on the token.
+ * @param {Object} req Express request object
+ * @returns {string} User ID
+ */
 export default async function getUserByToken(req) {
   // Obtain the token from the header
   const token = req.headers['x-token'];
