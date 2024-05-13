@@ -50,7 +50,6 @@ export default class FilesController {
       if (parentFile.type !== 'folder') {
         return res.status(400).json({ error: 'Parent is not a folder' });
       }
-    }
 
     // Create file in database
     const newFile = {
@@ -273,6 +272,7 @@ export default class FilesController {
       await fs.stat(localPath);
     } catch (err) {
       res.status(404).send({ error: 'Not found' });
+      return;
     }
 
     // Get the MIME-type of the file
