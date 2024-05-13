@@ -7,12 +7,7 @@ import getUserByToken from '../utils/getUser';
  * Handles user requests.
  */
 export default class UsersController {
-  /**
-   * Creates a new user in the database.
-   *
-   * @param {*} req Express request object
-   * @param {*} res Express response object
-   */
+  // POST /users - User creation callback
   static async postNew(req, res) {
     try {
       const { email, password } = req.body;
@@ -31,11 +26,7 @@ export default class UsersController {
     }
   }
 
-  /**
-   * Retrieves the user information from the database.
-   * @param {*} req Express request object
-   * @param {*} res Express response object
-   */
+  // GET /users/me - User information callback
   static async getMe(req, res) {
     // Authenticate user by token
     const userId = await getUserByToken(req);

@@ -1,9 +1,10 @@
-import path from 'path';
 import fs from 'fs/promises';
+import path from 'path';
 import { v4 } from 'uuid';
-import Queue from 'bull';
+
 import mime from 'mime-types';
 import { ObjectId } from 'mongodb';
+import Queue from 'bull';
 
 import dbClient from '../utils/db';
 import getUserByToken from '../utils/getUser';
@@ -11,15 +12,8 @@ import getUserByToken from '../utils/getUser';
 const defaultFolderPath = '/tmp/files_manager';
 const fileQueue = new Queue('fileQueue', 'redis://127.0.0.1:6379'); // Create a Bull queue
 
-/**
- * Handles file upload requests.
- */
 export default class FilesController {
-/**
- * Handles file upload requests.
- * @param {Object} req - The request object.
- * @param {Object} res - The response object.
- */
+  // POST /files - File upload callback
   static async postUpload(req, res) {
     // Validate user login
     const userId = await getUserByToken(req);
@@ -83,12 +77,7 @@ export default class FilesController {
     return res.status(201).json({ id: file.insertedId, ...newFile });
   }
 
-  /**
-   * Processes a GET request for a file by ID.
-   *
-   * @param {Object} req Express request object
-   * @param {Object} res Express response object
-   */
+  // GET /files/:id - Get a file by id callback
   static async getShow(req, res) {
     // Retrieve the user based on the token and validate
     try {
@@ -112,12 +101,7 @@ export default class FilesController {
     }
   }
 
-  /**
-   * Processes a GET request for files.
-   *
-   * @param {Object} req Express request object
-   * @param {Object} res Express response object
-   */
+  // GET /files - Get files callback
   static async getIndex(req, res) {
     try {
       // Retrieve the user based on the token and validate
@@ -157,12 +141,7 @@ export default class FilesController {
     }
   }
 
-  /**
- * Make a file public.
- * PUT /files/:id/publish
- * @param {Object} req - The request object.
- * @param {Object} res - The response object.
- */
+  // PUT /files/:id/publish - Make a file public callback
   static async putPublish(req, res) {
     try {
       const userId = await getUserByToken(req);
@@ -193,12 +172,7 @@ export default class FilesController {
     }
   }
 
-  /**
- * Make a file private.
- * PUT /files/:id/unpublish
- * @param {Object} req - The request object.
- * @param {Object} res - The response object.
- */
+  // PUT /files/:id/unpublish - Make a file private callback
   static async putUnpublish(req, res) {
     try {
       const userId = await getUserByToken(req);
@@ -230,12 +204,7 @@ export default class FilesController {
     }
   }
 
-  /**
- * Get the data content of a file.
- * GET /files/:id/data
- * @param {Object} req - The request object.
- * @param {Object} res - The response object.
- */
+  // GET /files/:id/data - Data content callback
   static async getFile(req, res) {
     // Get the file from the database
     const fileId = req.params.id;
@@ -280,7 +249,6 @@ export default class FilesController {
 
     // Set the 'Content-Type' header to the MIME type of the file
     res.setHeader('Content-Type', mimeType);
-    //console.log(localPath);
     // Send the file from the disk
     res.status(200).sendFile(localPath);
   }
