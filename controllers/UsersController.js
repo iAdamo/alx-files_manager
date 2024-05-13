@@ -3,7 +3,16 @@ import { createHash } from 'crypto';
 import dbClient from '../utils/db';
 import getUserByToken from '../utils/getUser';
 
+/**
+ * Handles user requests.
+ */
 export default class UsersController {
+  /**
+   * Creates a new user in the database.
+   *
+   * @param {*} req Express request object
+   * @param {*} res Express response object
+   */
   static async postNew(req, res) {
     try {
       const { email, password } = req.body;
@@ -22,7 +31,11 @@ export default class UsersController {
     }
   }
 
-  // Retrieve the user based on the token
+  /**
+   * Retrieves the user information from the database.
+   * @param {*} req Express request object
+   * @param {*} res Express response object
+   */
   static async getMe(req, res) {
     // Authenticate user by token
     const userId = await getUserByToken(req);

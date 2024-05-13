@@ -5,8 +5,17 @@ import dbClient from '../utils/db';
 import getUserByToken from '../utils/getUser';
 import redisClient from '../utils/redis';
 
+/**
+ * Handles authentication requests.
+ */
 export default class AuthController {
-  // Sign-in a user by generating a new authentication token
+  /**
+   * Sign-in a user by generating a new authentication token
+   *
+   *    * @param {Object} req Express request object
+   * @param {Object} res Express response object
+   * @returns {Object} JSON response
+   */
   static async getConnect(req, res) {
     // Obtain the Authorization header
     const auth = req.headers.authorization;
@@ -44,7 +53,12 @@ export default class AuthController {
     res.status(200).send({ token });
   }
 
-  // sign-out a user based on a token
+  /**
+   * sign-out a user based on a token
+   *
+   * @param {Object} req Express request object
+   * @param {Object} res Express response object
+   */
   static async getDisconnect(req, res) {
     // Obtain the Authorization token from the header
     const token = req.headers['x-token'];
