@@ -1,7 +1,7 @@
 import path from 'path';
-import { promises as fs } from 'fs';
+import fs from 'fs/promises';
 import { v4 } from 'uuid';
-
+import Queue from 'bull';
 import mime from 'mime-types';
 import { ObjectId } from 'mongodb';
 
@@ -9,91 +9,78 @@ import dbClient from '../utils/db';
 import getUserByToken from '../utils/getUser';
 
 const defaultFolderPath = '/tmp/files_manager';
+const fileQueue = new Queue('fileQueue', 'redis://127.0.0.1:6379'); // Create a Bull queue
 
 /**
  * Handles file upload requests.
  */
 export default class FilesController {
-  /**
-   * Processes a POST request for file upload.
-   *
-   * @param {Object} req Express request object
-   * @param {Object} res Express response object
-   */
+/**
+ * Handles file upload requests.
+ * @param {Object} req - The request object.
+ * @param {Object} res - The response object.
+ */
   static async postUpload(req, res) {
-    try {
-      // Retrieve user ID from token
-      const userId = await getUserByToken(req, res);
-      if (!userId) {
-        res.status(400).send({ error: 'Missing or invalid token' });
-        return;
-      }
-
-      // Get file information and validate
-      const {
-        name, type, parentId = 0, isPublic = false, data,
-      } = req.body;
-
-      if (!name) {
-        res.status(400).send({ error: 'Missing name' });
-        return;
-      }
-      if (!type || !['folder', 'file', 'image'].includes(type)) {
-        res.status(400).send({ error: 'Missing or invalid type' });
-        return;
-      }
-      if (!data && type !== 'folder') {
-        res.status(400).send({ error: 'Missing data for non-folder files' });
-        return;
-      }
-
-      // Validate parent file if provided
-      if (parentId !== 0) {
-        const parentFile = await dbClient.getFileBy({ _id: ObjectId(parentId) });
-        if (!parentFile) {
-          res.status(400).send({ error: 'Parent file not found' });
-          return;
-        }
-        if (parentFile.type !== 'folder') {
-          res.status(400).send({ error: 'Parent must be a folder' });
-          return;
-        }
-      }
-
-      // Create folder in database
-      if (type === 'folder') {
-        const newFolder = {
-          userId: ObjectId(userId),
-          name,
-          type,
-          isPublic,
-          parentId: parentId === 0 ? 0 : ObjectId(parentId),
-        };
-        const folder = await dbClient.createFile({ ...newFolder });
-        res.status(201).send({ id: folder.insertedId, ...newFolder });
-        return;
-      }
-
-      // Handle file upload (file or image)
-      const folderPath = process.env.FOLDER_PATH || defaultFolderPath;
-      const fileUUID = v4();
-      const localPath = path.join(folderPath, fileUUID);
-      fs.mkdir(path.dirname(localPath), { recursive: true });
-      await fs.writeFile(localPath, data, 'base64');
-
-      // Create file record in database
-      const newFile = {
-        userId: ObjectId(userId),
-        name,
-        type,
-        isPublic,
-        parentId: parentId === 0 ? 0 : ObjectId(parentId),
-      };
-      const file = await dbClient.createFile({ ...newFile, localPath });
-      res.status(201).send({ id: file.insertedId, ...newFile });
-    } catch (err) {
-      res.status(500).send({ error: `postUpload Error ${err}` });
+    // Validate user login
+    const userId = await getUserByToken(req);
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
     }
+
+    // Obtain file information from request body and validate
+    const { name, type, data } = req.body;
+    const parentId = req.body.parentId || '0';
+    const isPublic = req.body.isPublic || false;
+
+    // Validate request data
+    if (!name || !type || (type !== 'folder' && !data)) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    if (!['folder', 'file', 'image'].includes(type)) {
+      return res.status(400).json({ error: 'Invalid type' });
+    }
+
+    // Check if parent file exists in database
+    if (parentId !== '0') {
+      const parentFile = await dbClient.getFileBy({ _id: ObjectId(parentId) });
+      if (!parentFile) {
+        return res.status(400).json({ error: 'Parent not found' });
+      }
+      if (parentFile.type !== 'folder') {
+        return res.status(400).json({ error: 'Parent is not a folder' });
+      }
+    }
+
+    // Create file in database
+    const newFile = {
+      userId,
+      name,
+      type,
+      isPublic,
+      parentId: parentId === '0' ? '0' : ObjectId(parentId),
+    };
+
+    if (type === 'folder') {
+      const folder = await dbClient.createFile({ ...newFile });
+      return res.status(201).json({ id: folder.insertedId, ...newFile });
+    }
+
+    // If type is not 'folder', write the file to the filesystem
+    const fileFolder = process.env.FOLDER_PATH || defaultFolderPath;
+    const localPath = path.join(fileFolder, v4());
+    await fs.mkdir(path.dirname(localPath), { recursive: true });
+    await fs.writeFile(localPath, data, 'base64');
+
+    // Add new file document in the collection files
+    const file = await dbClient.createFile({ ...newFile, localPath });
+
+    // Add the file to the queue if file type is image
+    if (type === 'image') {
+      fileQueue.add({ fileId: file.insertedId, userId });
+    }
+
+    return res.status(201).json({ id: file.insertedId, ...newFile });
   }
 
   /**
@@ -257,45 +244,44 @@ export default class FilesController {
       res.status(404).send({ error: 'Not found' });
       return;
     }
-
+    // Check if the file is not a folder
+    if (file.type === 'folder') {
+      res.status(400).send({ error: "A folder doesn't have content" });
+      return;
+    }
     // Obtain the user ID by the token
     const authUserId = await getUserByToken(req);
-
     // Get userId and isPublic attributes
     const { userId, isPublic } = file;
-
     // Consider when the file is not public and the user is not the owner
     if (!isPublic && (!authUserId || authUserId.toString() !== userId.toString())) {
       res.status(403).send({ error: 'Not found' });
       return;
     }
 
-    // Check if the file is not a folder
-    if (file.type === 'folder') {
-      res.status(400).send({ error: "A folder doesn't have content" });
-      return;
+    // Get the file path
+    let { localPath } = file;
+    // Check if the file is an image
+    if (file.type === 'image') {
+      // Get file size from the request query
+      let { size } = req.query;
+      if (!size) size = 500;
+      localPath = `${localPath}_${size}`;
     }
-
-    // Check local availability of the file
-    const { localPath } = file;
+    // Check file local availability
     try {
       await fs.stat(localPath);
     } catch (err) {
       res.status(404).send({ error: 'Not found' });
-      return;
     }
 
     // Get the MIME-type of the file
     const mimeType = mime.lookup(file.name);
 
-    // Read the file
-    const fileContent = await fs.readFile(localPath, 'utf-8');
-    if (fileContent) {
-      // Set the 'Content-Type' header to the MIME type of the file
-      res.set('Content-Type', mimeType);
-
-      // Send the file content
-      res.status(200).send(fileContent);
-    }
+    // Set the 'Content-Type' header to the MIME type of the file
+    res.setHeader('Content-Type', mimeType);
+    //console.log(localPath);
+    // Send the file from the disk
+    res.status(200).sendFile(localPath);
   }
 }
