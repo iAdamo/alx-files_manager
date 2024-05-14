@@ -4,7 +4,6 @@ import dbClient from '../utils/db';
 import getUserByToken from '../utils/getUser';
 
 export default class UsersController {
-  // POST /users - User creation callback
   static async postNew(req, res) {
     try {
       const { email, password } = req.body;
@@ -23,7 +22,7 @@ export default class UsersController {
     }
   }
 
-  // GET /users/me - User information callback
+  // Retrieve the user based on the token
   static async getMe(req, res) {
     // Authenticate user by token
     const userId = await getUserByToken(req);

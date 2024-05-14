@@ -6,7 +6,7 @@ import getUserByToken from '../utils/getUser';
 import redisClient from '../utils/redis';
 
 export default class AuthController {
-  // GET /connect - User sign-in callback
+  // Sign-in a user by generating a new authentication token
   static async getConnect(req, res) {
     // Obtain the Authorization header
     const auth = req.headers.authorization;
@@ -44,7 +44,7 @@ export default class AuthController {
     res.status(200).send({ token });
   }
 
-  // GET /disconnect - User sign-out callback
+  // sign-out a user based on a token
   static async getDisconnect(req, res) {
     // Obtain the Authorization token from the header
     const token = req.headers['x-token'];
