@@ -221,18 +221,20 @@ export default class FilesController {
       res.status(404).send({ error: 'Not found' });
       return;
     }
-    // Check if the file is not a folder
-    if (file.type === 'folder') {
-      res.status(400).send({ error: "A folder doesn't have content" });
-      return;
-    }
+
     // Obtain the user ID by the token
     const authUserId = await getUserByToken(req);
     // Get userId and isPublic attributes
     const { userId, isPublic } = file;
     // Consider when the file is not public and the user is not the owner
-    if (!isPublic && (!authUserId || authUserId.toString() !== userId.toString())) {
+    if (!isPublic && (authUserId.toString() !== userId.toString())) {
       res.status(403).send({ error: 'Not found' });
+      return;
+    }
+
+    // Check if the file is not a folder
+    if (file.type === 'folder') {
+      res.status(400).send({ error: "A folder doesn't have content" });
       return;
     }
 
@@ -257,7 +259,7 @@ export default class FilesController {
     const mimeType = mime.lookup(file.name);
 
     // Set the 'Content-Type' header to the MIME type of the file
-    res.setHeader('Content-Type', mimeType);
+    res.set('Content-Type', mimeType);
 
     // Send the file from the disk
     res.status(200).sendFile(localPath);

@@ -1,7 +1,9 @@
 import { promises as fs } from 'fs';
+
 import { ObjectId } from 'mongodb';
 import imageThumbnail from 'image-thumbnail';
 import Queue from 'bull';
+
 import dbClient from './utils/db';
 
 // Create a bull queue
