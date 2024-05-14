@@ -242,13 +242,14 @@ export default class FilesController {
       await fs.stat(localPath);
     } catch (err) {
       res.status(404).send({ error: 'Not found' });
+      return;
     }
 
     // Get the MIME-type of the file
     const mimeType = mime.lookup(file.name);
 
     // Set the 'Content-Type' header to the MIME type of the file
-    res.setHeader('Content-Type', mimeType);
+    res.set('Content-Type', mimeType);
     // Send the file from the disk
     res.status(200).sendFile(localPath);
   }

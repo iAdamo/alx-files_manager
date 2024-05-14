@@ -3,9 +3,6 @@ import { createHash } from 'crypto';
 import dbClient from '../utils/db';
 import getUserByToken from '../utils/getUser';
 
-/**
- * Handles user requests.
- */
 export default class UsersController {
   // POST /users - User creation callback
   static async postNew(req, res) {
