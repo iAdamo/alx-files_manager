@@ -8,8 +8,9 @@ import dbClient from './utils/db';
 
 // Create a bull queue
 const fileQueue = new Queue('fileQueue', 'redis://127.0.0.1:6379');
+const userQueue = new Queue('userQueue', 'redis://127.0.0.1:6379');
 
-// Process the job
+// Process fileQueue job
 fileQueue.process(async (job, done) => {
   // Get job data
   const { fileId, userId } = job.data;
@@ -35,5 +36,17 @@ fileQueue.process(async (job, done) => {
       console.log(error);
     }
   });
+  done();
+});
+
+// Process the userQueue job
+userQueue.process(async (job, done) => {
+  const { userId } = job.data;
+  if (!userId) done(new Error('Missing userId'));
+
+  const user = await dbClient.getUserBy({ _id: ObjectId(userId) });
+  if (!user) done(new Error('User not found'));
+
+  console.log(`Welcome ${user.email}`);
   done();
 });

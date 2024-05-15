@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import { createHash } from 'crypto';
 import request from 'request';
 
 describe('AuthController', () => {

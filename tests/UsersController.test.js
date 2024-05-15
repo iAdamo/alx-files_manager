@@ -111,4 +111,4 @@ describe('UsersController', () => {
       });
     });
   });
-  });
+});
