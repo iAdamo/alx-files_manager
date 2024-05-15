@@ -243,9 +243,8 @@ export default class FilesController {
     // Check if the file is an image
     if (file.type === 'image') {
       // Get file size from the request query
-      let { size } = req.query;
-      if (!size) size = 500;
-      localPath = `${localPath}_${size}`;
+      const { size } = req.query;
+      if (size) localPath = `${localPath}_${size}`;
     }
     // Check file local availability
     try {
