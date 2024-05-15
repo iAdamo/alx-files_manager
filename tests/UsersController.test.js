@@ -89,7 +89,7 @@ describe('UsersController', () => {
     it('should return 401 if invalid token', (done) => {
       const options = {
         url: 'http://localhost:5000/users/me',
-        headers: { 'X-token': 'Invalid' }
+        headers: { 'X-token': 'Invalid' },
       };
       request.get(options, (error, response, body) => {
         expect(response.statusCode).to.equal(401);
@@ -97,7 +97,6 @@ describe('UsersController', () => {
         done();
       });
     });
-
     it('should return the authenticated user', (done) => {
       const options = {
           url: 'http://localhost:5000/users/me',
@@ -111,4 +110,4 @@ describe('UsersController', () => {
       });
     });
   });
-  });
+});

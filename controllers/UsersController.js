@@ -1,10 +1,12 @@
 import { createHash } from 'crypto';
+import Queue from 'bull';
 
 import dbClient from '../utils/db';
 import getUserByToken from '../utils/getUser';
 
 export default class UsersController {
   static async postNew(req, res) {
+    const userQueue = Queue('userQueue', 'redis://127.0.0.1:6379');
     try {
       const { email, password } = req.body;
       if (!email) return res.status(400).send({ error: 'Missing email' });
@@ -15,6 +17,9 @@ export default class UsersController {
 
       const hashedPassword = createHash('sha1').update(password).digest('hex');
       const result = await dbClient.db.collection('users').insertOne({ email, password: hashedPassword });
+      // Add a userQueue job
+      userQueue.add({ userId: result.insertedId });
+
       return res.status(201).send({ id: result.insertedId, email });
     } catch (error) {
       console.error('Error creating user:', error);

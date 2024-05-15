@@ -1,7 +1,9 @@
 import { expect } from 'chai';
+import request from 'request';
+
 import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
-import request from 'request';
+
 
 describe('AppController', () => {
   const url = 'http://localhost:5000';
