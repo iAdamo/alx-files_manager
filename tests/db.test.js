@@ -4,35 +4,7 @@ import dbClient from '../utils/db';
 
 const { expect } = chai;
 
-describe('dbClient', () => {
-  beforeEach( async function() {
-    const waitConnection = () => {
-      return new Promise((resolve, reject) => {
-          let i = 0;
-          const repeatFct = async () => {
-              await setTimeout(() => {
-                  i += 1;
-                  if (i >= 10) {
-                      reject()
-                  }
-                  else if(!dbClient.isAlive()) {
-                      repeatFct()
-                  }
-                  else {
-                      resolve()
-                  }
-              }, 1000);
-          };
-          repeatFct();
-      })
-  };
-  });
-
-  afterEach( async function() {
-    await dbClient.db.collection('users').deleteMany({});
-    await dbClient.db.collection('files').deleteMany({});
-  });
-
+describe('dbClient', () => {e
   describe('isAlive', () => {
     it('should return true if the connection is established', () => {
       const result = dbClient.isAlive();

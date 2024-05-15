@@ -37,10 +37,9 @@ describe('AuthController', () => {
     });
 
     it('should return 200 if valid credentials', (done) => {
-      const email = 'email'
-      const password = 'password';
+      const email = 'test@example.com';
+      const password = 'password123';
       const base64Auth = Buffer.from(`${email}:${password}`, 'utf-8').toString('base64');
-      console.log(base64Auth);
       const options = {
         url: 'http://localhost:5000/connect',
         headers: { authorization: `Basic ${base64Auth}` }
